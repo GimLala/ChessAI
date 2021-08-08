@@ -8,33 +8,8 @@ try:
 	import Board
 	from Coordinates import *
 	import Piece
-	import cProfile, pstats, io
 	
-	def profile(fnc):
-	    
-	    def inner(*args, **kwargs):
-	        
-	        profile = cProfile.Profile()
-	        profile.enable()
-	        retval = fnc(*args, **kwargs)
-	        profile.disable()
-	        
-	        s = io.StringIO()
-	        
-	        sortby = 'cumulative'
-	        ps = pstats.Stats(profile, stream=s).sort_stats(sortby)
-	        ps.print_stats()
-	        
-	        with open("lol.txt", "w") as f:
-	        	f.write((s.getvalue()))
-	        #print(s.getvalue())
-	        
-	        return retval
-	
-	    return inner
-	
-	
-	@profile
+	#@profile
 	def init_chess():
 		
 		point_definer()
@@ -43,14 +18,23 @@ try:
 		
 		config.piece_classes += [Piece.King, Piece.Queen, Piece.Bishop,
 													Piece.Knight, Piece.Rook, Piece.Pawn]
-		Piece.fen_string_decoder("/rnbqkbnr/pppppppp/////PPPPPPPP/RNBQKBNR")
+		Piece.fen_string_decoder("/rnbqkbnr/pppppppp//3Q///PPPPPPPP/RNBQKBNR")
 		
 		wn.onscreenclick(Piece.on_click)
 		
 		while True:
+			
+			if config.quit:
+				
+				break
+			
 			wn.update()
-		
+			
 		#wn.update()
+		
+		wn.bye()
+		
+		return
 		
 	init_chess()
 

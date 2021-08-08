@@ -1,7 +1,43 @@
 from PIL import Image, ImageTk
 import turtle
+import pygame
 #import math
 #import json
+import cProfile, pstats, io
+
+quit = False
+
+
+def profile(fnc):
+	
+	def inner(*args, **kwargs):
+	 	
+		profile = cProfile.Profile()
+		profile.enable()
+		
+		for _ in range(100):
+			
+			retval = fnc(*args, **kwargs)
+		
+		profile.disable()
+		
+		s = io.StringIO()
+		
+		sortby = 'cumulative'
+		ps = pstats.Stats(profile, stream=s).sort_stats(sortby)
+		ps.print_stats()
+		
+		with open("lol.txt", "w") as f:
+			f.write((s.getvalue()))
+			#print(s.getvalue())
+		
+		global quit
+		
+		#quit = True
+		
+		return retval
+	
+	return inner
 
 turtle.colormode(255)
 
@@ -15,9 +51,17 @@ wn.bgcolor((225,)*3)
 wn.tracer(0)
 wn.setup(wn_len, wn_height, 0, 0)
 
+images_path = "Imgs/"
+sounds_path = "Sounds/Standard/"
+
+pygame.mixer.init()
+move_sound = pygame.mixer.Sound(f"{sounds_path}Move.mp3")
+capture_sound = pygame.mixer.Sound(f"{sounds_path}Capture.mp3")
+#castle_sound = pygame.mixer.Sound(f"{sounds_path}Castle.mp3")
+
 # Background
 
-Image.open("Background.gif").resize((wn_len, wn_height), Image.ANTIALIAS).save("Background.gif")
+Image.open(f"{images_path}Background.gif").resize((wn_len, wn_height), Image.ANTIALIAS).save(f"{images_path}Background.gif")
 #wn.bgpic("Background.gif")
 
 # Square length and triangle length.
@@ -116,6 +160,8 @@ valid_castles = []
 
 valid_promotions = []
 
+promote_piece = None
+
 # Is_selected is just a toggleable boolean. it is used for checking if the user has already clicked on a piece or not.
 
 is_selected = False
@@ -130,40 +176,40 @@ piece_types = ["white", "black"]
 
 # Adds pieces images.
 
-white_king = ImageTk.PhotoImage(Image.open("white king.png").resize((side, side)))
+white_king = ImageTk.PhotoImage(Image.open(f"{images_path}white king.png").resize((side, side)))
 wn.addshape("white king", turtle.Shape("image", white_king))
 
-white_queen = ImageTk.PhotoImage(Image.open("white queen.png").resize((side, side)))
+white_queen = ImageTk.PhotoImage(Image.open(f"{images_path}white queen.png").resize((side, side)))
 wn.addshape("white queen", turtle.Shape("image", white_queen))
 
-white_bishop = ImageTk.PhotoImage(Image.open("white bishop.png").resize((side, side)))
+white_bishop = ImageTk.PhotoImage(Image.open(f"{images_path}white bishop.png").resize((side, side)))
 wn.addshape("white bishop", turtle.Shape("image", white_bishop))
 
-white_knight = ImageTk.PhotoImage(Image.open("white knight.png").resize((int(side * 0.95), int(side * 0.95))))
+white_knight = ImageTk.PhotoImage(Image.open(f"{images_path}white knight.png").resize((int(side * 0.95), int(side * 0.95))))
 wn.addshape("white knight", turtle.Shape("image", white_knight))
 
-white_rook = ImageTk.PhotoImage(Image.open("white rook.png").resize((int(side * 0.85), int(side * 0.95))))
+white_rook = ImageTk.PhotoImage(Image.open(f"{images_path}white rook.png").resize((int(side * 0.85), int(side * 0.95))))
 wn.addshape("white rook", turtle.Shape("image", white_rook))
 
-white_pawn = ImageTk.PhotoImage(Image.open("white pawn.png").resize((int(side * 0.8), int(side * 0.95))))
+white_pawn = ImageTk.PhotoImage(Image.open(f"{images_path}white pawn.png").resize((int(side * 0.8), int(side * 0.95))))
 wn.addshape("white pawn", turtle.Shape("image", white_pawn))
 
-black_king = ImageTk.PhotoImage(Image.open("black king.png").resize((side, side)))
+black_king = ImageTk.PhotoImage(Image.open(f"{images_path}black king.png").resize((side, side)))
 wn.addshape("black king", turtle.Shape("image", black_king))
 
-black_queen = ImageTk.PhotoImage(Image.open("black queen.png").resize((side, side)))
+black_queen = ImageTk.PhotoImage(Image.open(f"{images_path}black queen.png").resize((side, side)))
 wn.addshape("black queen", turtle.Shape("image", black_queen))
 
-black_bishop = ImageTk.PhotoImage(Image.open("black bishop.png").resize((side, side)))
+black_bishop = ImageTk.PhotoImage(Image.open(f"{images_path}black bishop.png").resize((side, side)))
 wn.addshape("black bishop", turtle.Shape("image", black_bishop))
 
-black_knight = ImageTk.PhotoImage(Image.open("black knight.png").resize((int(side * 0.95), int(side * 0.95))))
+black_knight = ImageTk.PhotoImage(Image.open(f"{images_path}black knight.png").resize((int(side * 0.95), int(side * 0.95))))
 wn.addshape("black knight", turtle.Shape("image", black_knight))
 
-black_rook = ImageTk.PhotoImage(Image.open("black rook.png").resize((int(side * 0.85), int(side * 0.95))))
+black_rook = ImageTk.PhotoImage(Image.open(f"{images_path}black rook.png").resize((int(side * 0.85), int(side * 0.95))))
 wn.addshape("black rook", turtle.Shape("image", black_rook))
 
-black_pawn = ImageTk.PhotoImage(Image.open("black pawn.png").resize((int(side * 0.8), int(side * 0.95))))
+black_pawn = ImageTk.PhotoImage(Image.open(f"{images_path}black pawn.png").resize((int(side * 0.8), int(side * 0.95))))
 wn.addshape("black pawn", turtle.Shape("image", black_pawn))
 
 promote_squad = []
@@ -207,7 +253,9 @@ grey_dot_maker.alpha = 0.7
 #r = int(245 * (1 - grey_dot_maker.alpha) + 115 * grey_dot_maker.alpha)
 #g = int(222 * (1 - grey_dot_maker.alpha) + 115 * grey_dot_maker.alpha)
 #b = int(179 * (1 - grey_dot_maker.alpha) + 115 * grey_dot_maker.alpha)
-grey_dot_maker.color((154.0, 147.0, 134.0), (154.0, 147.0, 134.0))
+grey_dot_maker.color((154, 147, 134), (154, 147, 134))
+grey_dot_maker.shape("circle")
+grey_dot_maker.shapesize(radius/10)
 grey_dot_maker.hideturtle()
 grey_dot_maker.penup()
 

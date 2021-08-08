@@ -164,6 +164,7 @@ class Queen(Piece):
 				
 				self.attacked_points += (attacked_line, )
 	
+	
 	def get_valid_moves(self):
 		
 		valid_moves = ()
@@ -380,6 +381,7 @@ class Pawn(Piece):
 			black_pawns.append(self)
 		
 		self.forward = "top" if self.piece_colour == "white" else "bottom"
+		self.forward_direction_num = 1 if self.piece_colour == "white" else -1
 		self.set_attacked_points()
 	
 	def set_attacked_points(self):
@@ -422,13 +424,37 @@ class Pawn(Piece):
 		return valid_moves
 
 
-def init_promote_squad():
+class Promote_Squad():
 	
+	PEN_DICT = {
+		"shown": True,
+		"pendown": False,
+		"speed": 0
+	}
 	
-
-
-def bring_promote_squad(x, y):
+	PROMOTE_TUPLE = ("queen", "rook", "bishop", "knight")
 	
+	def __init__(self, x, y, colour):
+		
+		self.promote_pieces = []
+		
+		for n, promote_class in enumerate(self.PROMOTE_TUPLE):
+			
+			promote_piece = turtle.Turtle()
+			promote_piece.pen(self.PEN_DICT)
+			promote_piece.goto(x + (n - 1.5) * square_len, y)
+			promote_piece.shape(f"{colour} {promote_class}")
+			
+			self.promote_pieces.append(promote_piece)
+		
+		#promote_pieces[0].onclick(lambda: config.)
+		#list(map(lambda piece: piece.onclick(lambda x, y: setattr(config, "promote_piece", [piece for piece in self.promote_pieces if piece.distance(x, y) < 0.5 * square_len][0])), self.promote_pieces))
+	
+	def goto(self, x, y):
+		
+		for n, promote_piece in enumerate(promote_pieces):
+			
+			promote_piece.goto(x - (n - 1.5) * square_len, y)
 
 
 # Returns nothing. Gets called when clicked on the screen.
@@ -437,7 +463,8 @@ def on_click(x1, y1):
 	
 	# If checks if the player clicked on a piece or anywhere else.
 	
-	if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) and (-4 < y1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)):
+	if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) \\
+	and (-4 < y1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)):
 		
 		point = points[(7 - (int(y1 // square_len) + 4)) * 8 + (int(x1 // square_len) + 4)]
 		
@@ -493,8 +520,9 @@ def on_click(x1, y1):
 					
 					# Checks if the game has ended.
 					
-					if check_game_end() != "IP":
-						end_of_game(check_game_end()[0], check_game_end()[1])
+					#if check_game_end() != "IP":
+						
+						#end_of_game(check_game_end()[0], check_game_end()[1])
 					
 					break
 			
@@ -504,15 +532,17 @@ def on_click(x1, y1):
 				
 				# Promotion_point is the point on which the piece can promote.
 				
-				promotion_point = valid_capture[0]
+				promotion_point = valid_promotion[0]
 				
 				# If checks if the clicked point is in the valid points to move. 
 				
 				if point.board_cor == promotion_point.board_cor:
 					
+					promote_squad = Promote_Squad(point.x, point.y + config.from_piece.forward_direction_num * square_len, config.from_piece.piece_colour)
+					
 					# Makes the pawn promote.
 					
-					promote(config.from_piece, config.from_point, valid_promotion, grey_dot_maker)
+					#promote(config.from_piece, config.from_point, valid_promotion, grey_dot_maker)
 							
 					# It flips the boolean is_selected and the turn.
 					
@@ -528,9 +558,9 @@ def on_click(x1, y1):
 					
 					# Checks if the game has ended.
 					
-					if check_game_end() != "IP":
+					#if check_game_end() != "IP":
 						
-						end_of_game(check_game_end()[0], check_game_end()[1])
+						#end_of_game(check_game_end()[0], check_game_end()[1])
 					
 					break
 			
@@ -564,9 +594,9 @@ def on_click(x1, y1):
 					
 					# Checks if the game has ended.
 					
-					if check_game_end() != "IP":
+					#if check_game_end() != "IP":
 						
-						end_of_game(check_game_end()[0], check_game_end()[1])
+						#end_of_game(check_game_end()[0], check_game_end()[1])
 					
 					break
 			
@@ -598,9 +628,9 @@ def on_click(x1, y1):
 					
 					# Checks if the game has ended.
 					
-					if check_game_end() != "IP":
+					#if check_game_end() != "IP":
 						
-						end_of_game(check_game_end()[0], check_game_end()[1])
+						#end_of_game(check_game_end()[0], check_game_end()[1])
 			
 			# If it is not a valid point then it checks if the user clicked on the same piece again.
 			
@@ -632,7 +662,7 @@ def show_hint_moves(piece):
 	
 	# Resets the hints.
 	
-	grey_dot_maker.clear()
+	grey_dot_maker.clearstamps()
 	
 	# For loop takes each valid move and makes a grey dot on that coordinate.
 	
@@ -644,9 +674,7 @@ def show_hint_moves(piece):
 			
 			# Goes to the place to make the grey dot.
 			
-			#grey_dot_maker.color(board_colours[(valid_move.board_cor[0] + valid_move.board_cor[1]) % 2])
-			
-			grey_dot_maker.goto(valid_move.x, valid_move.y - radius)
+			grey_dot_maker.goto(valid_move.x, valid_move.y)
 			
 			# Sorted addition of move.
 			
@@ -662,9 +690,7 @@ def show_hint_moves(piece):
 			
 			# Goes to the place to make the grey dot.
 			
-			#grey_dot_maker.color(board_colours[(promotion_point.board_cor[0] + promotion_point.board_cor[1]) % 2])
-			
-			grey_dot_maker.goto(capture_point.x, capture_point.y - radius)
+			grey_dot_maker.goto(promotion_point.x, promotion_point.y)
 			
 			# Sorted addition of move.
 			
@@ -680,21 +706,11 @@ def show_hint_moves(piece):
 			
 			# Goes to the place to make the grey dot.
 			
-			#grey_dot_maker.color(board_colours[(capture_point.board_cor[0] + capture_point.board_cor[1]) % 2])
-			
-			grey_dot_maker.goto(capture_point.x, capture_point.y - square_len / 2)
+			grey_dot_maker.goto(capture_point.x, capture_point.y)
 			
 			# Makes a grey dot where the piece can move.
 			
-			grey_dot_maker.pensize(board_brush_size)
-			
-			grey_dot_maker.pendown()
-			
-			grey_dot_maker.circle(square_len / 2)
-			
-			grey_dot_maker.penup()
-			
-			grey_dot_maker.pensize(1)
+			grey_dot_maker.stamp()
 			
 			# Sorted addition of capture.
 			
@@ -712,9 +728,7 @@ def show_hint_moves(piece):
 			
 			# Goes to the place to make the dot.
 			
-			#grey_dot_maker.color(board_colours[(castle_point.board_cor[0] + castle_point.board_cor[1]) % 2])
-			
-			grey_dot_maker.goto(castle_point.x, castle_point.y - radius)
+			grey_dot_maker.goto(castle_point.x, castle_point.y)
 			
 			# Sorted addition of move.
 			
@@ -722,14 +736,7 @@ def show_hint_moves(piece):
 		
 		# Makes a grey dot where the piece can move.
 		
-		grey_dot_maker.pendown()
-		
-		grey_dot_maker.begin_fill()
-		grey_dot_maker.circle(radius)
-		grey_dot_maker.end_fill()
-		
-		grey_dot_maker.penup()
-		
+		grey_dot_maker.stamp()
 	
 	return valid_moves_and_captures
 
@@ -745,13 +752,15 @@ def move(from_piece, from_point, to_point, hint_turtle_obj):
 	
 	# Resets the hints and also sets the state and piece (that is on it) of the from point to empty.
 	
-	hint_turtle_obj.clear()
+	hint_turtle_obj.clearstamps()
 	from_point.state = [None, None]
 	from_point.piece = ""
 	
 	from_piece.point = to_point
 	from_piece.set_attacked_points()
 	from_piece.has_moved = True
+	
+	move_sound.play()
 	
 	# Makes the piece move.
 	
@@ -772,7 +781,7 @@ def capture(from_piece, from_point, captured_piece, to_point, hint_turtle_obj):
 	
 	# Resets the hints and the kill piece and also sets the state of the from point and kill point to empty.
 	
-	hint_turtle_obj.clear()
+	hint_turtle_obj.clearstamps()
 	
 	from_point.state = [None, None]
 	from_point.piece = ""
@@ -795,6 +804,8 @@ def capture(from_piece, from_point, captured_piece, to_point, hint_turtle_obj):
 	
 	del captured_piece
 	
+	capture_sound.play()
+	
 	# Makes the piece jump.
 	
 	from_piece.goto(to_point.x, to_point.y)
@@ -816,7 +827,7 @@ def castle(from_piece, from_point, castled_rook, castled_rook_point, castle_poin
 	
 	# Resets the hints and the and also sets the state of the from point to None.
 	
-	hint_turtle_obj.clear()
+	hint_turtle_obj.clearstamps()
 	
 	from_point.state = [None, None]
 	from_point.piece = ""
@@ -830,6 +841,8 @@ def castle(from_piece, from_point, castled_rook, castled_rook_point, castle_poin
 	castled_rook.point = castled_rook_point
 	castled_rook.set_attacked_points()
 	castled_rook.has_moved = True
+	
+	move_sound.play()
 	
 	# Makes the piece castle.
 	
@@ -862,14 +875,20 @@ def flip_turn():
 		
 		config.turn = config.turns[config.turns.index(config.turn) + 1]
 	
-	# If an IndexError comes it means that the last index of the turns was the turn and had already been played by the player and that the turn must loop back to the 0th index of turns.
+	# If an IndexError comes it means that the last index of the turns was
+	# the turn and had already been played by the player and that the turn
+	# must loop back to the 0th index of turns.
 	
 	except IndexError:
 		
 		config.turn = config.turns[0]
 
 
-# Returns a list with 2 arguments: first one being one of the strings -> "IP" for in progress, "black" if black won, "draw" if the game is a draw and "white" if white won and second one being the reason for the game ending. Checks if game has ended by any player winning or by a draw or it is in progress.
+# Returns a list with 2 arguments: first one being one of the strings:-
+# "IP" for in progress, "black" if black won, "draw" if the game is a draw and
+# "white" if white won and second one being the reason for the game
+# ending. Checks if game has ended by any player winning or by a draw or 
+#it is in progress.
 
 def check_game_end():
 	
