@@ -388,10 +388,10 @@ class Pawn(Piece):
 		
 		self.forward_point = getattr(self.point, self.forward)
 		self.forward_forward_point = getattr(self.forward_point, self.forward) if self.forward_point else None
-		self.attacked_points = [point for point in [point for point in (self.forward_point.left, self.forward_point.right) if self.forward_point] if point]
+		self.attacked_points = [point for point in (self.forward_point.left, self.forward_point.right) if self.forward_point and point]
 		
 		self.promote_rank = 8 if self.piece_colour == "white" else 1
-		self.can_promote = True if (self.point.board_cor[1] == 7 and self.promote_rank == 8) or (self.point.board_cor[1] == 2 and self.promote_rank == 1) else False
+		self.can_promote = (self.point.board_cor[1], self.promote_rank) in ((7, 8), (2, 1))
 	
 	def get_valid_moves(self):
 		
@@ -403,7 +403,7 @@ class Pawn(Piece):
 			
 			if linked_point.state[0] == self.opposite_piece_colour:
 				
-				valid_moves += ((linked_point, linked_point.piece) if not self.can_promote else (linked_point, linked_point.piece, "promote"), )
+				valid_moves += ((linked_point, linked_point.piece), ) if not self.can_promote else ((linked_point, linked_point.piece, "promote"), )
 		
 		# Normal pawn pushes and normal promotions.
 		
@@ -413,7 +413,8 @@ class Pawn(Piece):
 		
 		# Double pawn pushes.
 		
-		if not self.has_moved and not self.forward_point.state[0] and self.forward_forward_point and not self.forward_forward_point.state[0]:
+		if not self.has_moved and not self.forward_point.state[0] and \
+		self.forward_forward_point and not self.forward_forward_point.state[0]:
 			
 			valid_moves += (self.forward_forward_point, )
 		
@@ -424,46 +425,51 @@ class Pawn(Piece):
 		return valid_moves
 
 
-class Promote_Squad():
+class Promote_Squad:
 	
 	PEN_DICT = {
 		"shown": True,
 		"pendown": False,
 		"speed": 0
 	}
-	
+	PROMOTE_CLASSES = (Queen, Rook, Bishop, Knight)
 	PROMOTE_TUPLE = ("queen", "rook", "bishop", "knight")
 	
-	def __init__(self, x, y, colour):
+	def __init__(self, x, y, promote_shape_colour):
 		
 		self.promote_pieces = []
 		
-		for n, promote_class in enumerate(self.PROMOTE_TUPLE):
+		for n, (promote_shape_name, promote_class) in enumerate(zip(self.PROMOTE_TUPLE, self.PROMOTE_CLASSES)):
 			
 			promote_piece = turtle.Turtle()
 			promote_piece.pen(self.PEN_DICT)
 			promote_piece.goto(x + (n - 1.5) * square_len, y)
-			promote_piece.shape(f"{colour} {promote_class}")
+			promote_piece.shape(f"{promote_shape_colour} {promote_shape_name}")
+			
+			promote_piece.promote_colour = promote_shape_colour
+			promote_piece.promote_class = promote_class
 			
 			self.promote_pieces.append(promote_piece)
 		
-		#promote_pieces[0].onclick(lambda: config.)
-		#list(map(lambda piece: piece.onclick(lambda x, y: setattr(config, "promote_piece", [piece for piece in self.promote_pieces if piece.distance(x, y) < 0.5 * square_len][0])), self.promote_pieces))
+		[(lambda piece: piece.onclick(lambda x, y: setattr(config, "promote_piece", piece)))(piece) for piece in self.promote_pieces]
 	
-	def goto(self, x, y):
+	def destroy(self):
 		
-		for n, promote_piece in enumerate(promote_pieces):
+		for piece in self.promote_pieces:
 			
-			promote_piece.goto(x - (n - 1.5) * square_len, y)
+			piece.ht()
+			del piece
 
 
 # Returns nothing. Gets called when clicked on the screen.
 
 def on_click(x1, y1):
 	
+	wn.onclick(None)
+	
 	# If checks if the player clicked on a piece or anywhere else.
 	
-	if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) \\
+	if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) \
 	and (-4 < y1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)):
 		
 		point = points[(7 - (int(y1 // square_len) + 4)) * 8 + (int(x1 // square_len) + 4)]
@@ -488,7 +494,9 @@ def on_click(x1, y1):
 				# Flips the boolean.
 				
 				config.is_selected = True
-					
+				
+				wn.onclick(on_click)
+				
 				return
 		
 		# If it is in else it means that the player clicked on a piece before.
@@ -540,10 +548,20 @@ def on_click(x1, y1):
 					
 					promote_squad = Promote_Squad(point.x, point.y + config.from_piece.forward_direction_num * square_len, config.from_piece.piece_colour)
 					
+					while not config.promote_piece:
+						
+						if config.quit:
+							
+							break
+						
+						wn.update()
+					
+					promote_squad.destroy()
+					
 					# Makes the pawn promote.
 					
-					#promote(config.from_piece, config.from_point, valid_promotion, grey_dot_maker)
-							
+					#promote(config.from_piece, config.from_point, config.promote_piece.promote_class, config.promote_piece.promote_colour, valid_promotion, grey_dot_maker)
+					
 					# It flips the boolean is_selected and the turn.
 					
 					config.draw_move_count = 0
@@ -652,9 +670,12 @@ def on_click(x1, y1):
 				
 				config.is_selected = False
 				on_click(x1, y1)
+	
+	wn.onclick(on_click)
 
 
-# Returns the valid moves and captures and other moves in a list of sorted tuples. Gets called if the user clicked on a piece.
+# Returns the valid moves and captures and other moves in a list of
+# sorted tuples. Gets called if the user clicked on a piece.
 
 def show_hint_moves(piece):
 	
@@ -811,6 +832,9 @@ def capture(from_piece, from_point, captured_piece, to_point, hint_turtle_obj):
 	from_piece.goto(to_point.x, to_point.y)
 
 
+def promote(from_piece, from_point, promote_class, promote_colour, valid_promotion, grey_dot_maker)
+
+
 # Returns nothing. Makes the piece castle.
 
 def castle(from_piece, from_point, castled_rook, castled_rook_point, castle_point, hint_turtle_obj):
@@ -854,22 +878,23 @@ def castle(from_piece, from_point, castled_rook, castled_rook_point, castle_poin
 
 def add_move_to_draw_move_list(from_point, to_point):
 
-	config.draw_move_repetition_lists[config.list_to_add_move_in_draw_check].append([from_point, to_point])
+	config.draw_move_repetition_lists[config.draw_list_num].append([from_point, to_point])
 	
-	if len(config.draw_move_repetition_lists[config.list_to_add_move_in_draw_check]) == 2:
+	if len(config.draw_move_repetition_lists[config.draw_list_num]) == 2:
 		
-		if config.list_to_add_move_in_draw_check < 4:
-			config.list_to_add_move_in_draw_check += 1
+		if config.draw_list_num < 4:
+			config.draw_list_num += 1
 		
 		else:
-			config.list_to_add_move_in_draw_check = 0
+			config.draw_list_num = 0
 
 
 # Returns nothing. Flips the turn.
 
 def flip_turn():
 	
-	# Try tries to add the index of the turn in the turns and inserts the value into turn.
+	# Try tries to add the index of the turn in the turns and
+	# inserts the value into turn.
 	
 	try:
 		
@@ -888,11 +913,12 @@ def flip_turn():
 # "IP" for in progress, "black" if black won, "draw" if the game is a draw and
 # "white" if white won and second one being the reason for the game
 # ending. Checks if game has ended by any player winning or by a draw or 
-#it is in progress.
+# it is in progress.
 
 def check_game_end():
 	
-	# If checks if the all the white or black pieces are eaten, and if they are it returns the other player's side.
+	# If checks if the all the white or black pieces are eaten, and
+	# if they are it returns the other player's side.
 	
 #	if not white_pieces_group:
 #		return ["black won", "killing all pieces"]
@@ -900,20 +926,23 @@ def check_game_end():
 #	elif not black_pieces_group:
 #		return ["white won", "killing all pieces"]
 	
-	# If none of the above statements are true, it checks if the player has played the same move 5 times.
+	# If none of the above statements are true, it checks if the player has
+	# played the same move 5 times.
 	
-	if config.draw_move_repetition_lists[0] == config.draw_move_repetition_lists[2] == config.draw_move_repetition_lists[4] and config.draw_move_repetition_lists[1] == config.draw_move_repetition_lists[3]:
-		return ["draw", "repetition"]
+	#if repetition:
+		#return ["draw", "repetition"]
 	
-	# It lastly checks if the players have played 50 moves without a jump, and if one of this is true, then it returns draw.
+	# It lastly checks if the players have played 50 moves without
+	# a jump, and if one of this is true, then it returns draw.
 	
-	elif config.draw_move_count == 100:
-		return ["draw", "50 move draw rule"]
+	#elif config.draw_move_count == 100:
+		#return ["draw", "50 move draw rule"]
 	
 	return "IP"
 
 
-# Returns nothing. Makes the animation of white screen rolling from down to below and displays message saying that which side won.
+# Returns nothing. Makes the animation of white screen rolling from
+# down to below and displays message saying that which side won.
 
 def end_of_game(text, reason):
 	
@@ -930,7 +959,8 @@ def end_of_game(text, reason):
 	end_of_game_screen.clearstamps()
 	end_of_game_screen.stamp()
 	
-	# It writes the text and the reason (for eg: white won = text and by killing all pieces = reason).
+	# It writes the text and the reason (for eg: white won = text and
+	# by checkmate = reason).
 	
 	end_result_writer.write(f"{text.capitalize()} by {reason.capitalize()}", True, "center", ("Arial", 15, "bold"))
 

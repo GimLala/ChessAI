@@ -146,7 +146,7 @@ game_ID_writer.penup()
 valid_moves = []
 draw_move_count = 0
 draw_move_repetition_lists = [[], [], [], [], []]
-list_to_add_move_in_draw_check = 0
+draw_list_num = 0
 
 # Jump stuff.
 

@@ -30,8 +30,8 @@ def point_definer():
 	
 	# Offset of 0.5 to make the point in the center of the square.
 	
-	x_cor = [(x + 0.5) * square_len for x in range(-4, 5)]
-	y_cor = x_cor[:]
+	#x_cor = [(x + 0.5) * square_len for x in range(-4, 5)]
+	#y_cor = x_cor[:]
 	
 	# Outer loop is for the y coordinates.
 	

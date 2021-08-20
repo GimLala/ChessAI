@@ -22,7 +22,7 @@ try:
 		
 		wn.onscreenclick(Piece.on_click)
 		
-		while True:
+		while wn:
 			
 			if config.quit:
 				
@@ -30,6 +30,13 @@ try:
 			
 			wn.update()
 			
+			#wn.onscreenclick(Piece.on_click)
+			
+			if config.promote_piece and config.promote_piece.shape() != "white queen":
+				
+				print(config.promote_piece.shape())
+				pass
+		
 		#wn.update()
 		
 		wn.bye()
