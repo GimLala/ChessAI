@@ -446,7 +446,6 @@ class Promote_Squad:
 			promote_piece.goto(x + (n - 1.5) * square_len, y)
 			promote_piece.shape(f"{promote_shape_colour} {promote_shape_name}")
 			
-			promote_piece.promote_colour = promote_shape_colour
 			promote_piece.promote_class = promote_class
 			
 			self.promote_pieces.append(promote_piece)
@@ -560,7 +559,9 @@ def on_click(x1, y1):
 					
 					# Makes the pawn promote.
 					
-					#promote(config.from_piece, config.from_point, config.promote_piece.promote_class, config.promote_piece.promote_colour, valid_promotion, grey_dot_maker)
+					promote(config.from_piece, config.from_point, config.promote_piece.promote_class, valid_promotion, grey_dot_maker)
+					
+					config.promote_piece = None
 					
 					# It flips the boolean is_selected and the turn.
 					
@@ -832,7 +833,53 @@ def capture(from_piece, from_point, captured_piece, to_point, hint_turtle_obj):
 	from_piece.goto(to_point.x, to_point.y)
 
 
-def promote(from_piece, from_point, promote_class, promote_colour, valid_promotion, grey_dot_maker)
+def promote(from_piece, from_point, promote_class, valid_promotion, hint_turtle_obj):
+	
+	promoted_piece = promote_class(from_piece.piece_colour, from_piece.opposite_piece_colour, valid_promotion[0])
+	
+	hint_turtle_obj.clearstamps()
+	
+	from_point.state = [None, None]
+	from_point.piece = ""
+	
+	from_piece.point = valid_promotion[0]
+	from_piece.hideturtle()
+	
+	# Removes from piece from any list to which it belongs and then deletes it.
+	
+	pieces_group.remove(from_piece)
+	
+	if from_piece.piece_colour == "white":
+		white_pieces_group.remove(from_piece)
+	
+	else:
+		black_pieces_group.remove(from_piece)
+	
+	del from_piece
+	
+	if len(valid_promotion) == 3:
+		
+		captured_piece = valid_promotion[1]
+		
+		captured_piece.hideturtle()
+		
+		# Removes captured piece from any list to which it belongs and then deletes it.
+		
+		pieces_group.remove(captured_piece)
+		
+		if captured_piece.piece_colour == "white":
+			white_pieces_group.remove(captured_piece)
+		
+		else:
+			black_pieces_group.remove(captured_piece)
+		
+		del captured_piece
+		
+		capture_sound.play()
+		
+		return
+	
+	move_sound.play()
 
 
 # Returns nothing. Makes the piece castle.
