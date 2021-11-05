@@ -15,7 +15,7 @@ def profile(fnc):
 		profile = cProfile.Profile()
 		profile.enable()
 		
-		for _ in range(100):
+		for _ in range(10):
 			
 			retval = fnc(*args, **kwargs)
 		
@@ -165,6 +165,7 @@ promote_piece = None
 # Is_selected is just a toggleable boolean. it is used for checking if the user has already clicked on a piece or not.
 
 is_selected = False
+dragging = False
 
 # Pieces.
 
