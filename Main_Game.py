@@ -18,7 +18,7 @@ try:
 		
 		config.piece_classes += [Piece.King, Piece.Queen, Piece.Bishop,
 													Piece.Knight, Piece.Rook, Piece.Pawn]
-		Piece.fen_string_decoder("/rnbqkbnr/pppppppp//3Q///PPPPPPPP/RNBQKBNR")
+		Piece.fen_string_decoder("/rnbqkbnr/pppppppp/////PPPPPPPP/RNBQKBNR")
 		
 		wn.onscreenclick(Piece.on_click)
 		

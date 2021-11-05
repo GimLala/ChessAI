@@ -39,6 +39,37 @@ class Piece(turtle.Turtle):
 		
 		pieces_group.append(self)
 		getattr(config, f"{self.piece_colour}_pieces_group").append(self)
+		
+		self.ondrag(self.on_drag)
+		self.onrelease(self.on_release)
+	
+	def on_drag(self, x, y):
+		
+		self.ondrag(None)
+		
+		#config.function_pass = True
+		
+		if not config.from_point.chess_cor == self.point.chess_cor and not config.dragging:
+			
+			on_click(self.point.x, self.point.y)
+		
+		config.dragging = True
+		
+		if self.piece_colour == config.turn or True:
+			
+			self.goto(x, y)
+		
+		self.ondrag(self.on_drag)
+	
+	def on_release(self, x, y):
+		
+		if config.dragging:
+			
+			on_click(x, y)
+			
+			config.dragging = False
+			
+			self.goto(self.point.x, self.point.y)
 	
 	# For Zobrist hashing and FEN string decoding.
 	
@@ -462,217 +493,227 @@ class Promote_Squad:
 
 # Returns nothing. Gets called when clicked on the screen.
 
+#@profile
 def on_click(x1, y1):
 	
-	wn.onclick(None)
-	
-	# If checks if the player clicked on a piece or anywhere else.
-	
-	if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) \
-	and (-4 < y1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)):
+	if True: #config.from_point or config.function_pass or True:
 		
-		point = points[(7 - (int(y1 // square_len) + 4)) * 8 + (int(x1 // square_len) + 4)]
+		wn.onscreenclick(None)
 		
-		# If checks if the user has already clicked on a piece or not.
+		# If checks if the player clicked on a piece or anywhere else.
 		
-		if not config.is_selected:
+		if (-4 <= x1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)) \
+		and (-4 < y1 / square_len < 4 and 0.5 * (square_len - side) <= abs(x1 % square_len) <= side + 0.5 * (square_len - side)):
 			
-			# If the state of the point is not empty, then it calls the show_valid_moves function.
+			point = points[(7 - (int(y1 // square_len) + 4)) * 8 + (int(x1 // square_len) + 4)]
 			
-			if point.state[0] == config.turn:
-				
-				# Shows all the possible moves.
-				
-				config.valid_moves, config.valid_promotions, config.valid_captures, config.valid_castles = show_hint_moves(point.piece)
-				
-				# Sets the from point and from piece.
-				
-				config.from_point = point
-				config.from_piece = point.piece
-				
-				# Flips the boolean.
-				
-				config.is_selected = True
-				
-				wn.onclick(on_click)
-				
-				return
-		
-		# If it is in else it means that the player clicked on a piece before.
-		
-		else:
+			# If checks if the user has already clicked on a piece or not.
 			
-			# For takes each point in the valid moves list of the from piece.
+			if not config.is_selected:
+				
+				# If the state of the point is not empty, then it calls the show_valid_moves function.
+				
+				if point.state[0] == config.turn:
+					
+					# Shows all the possible moves.
+					
+					config.valid_moves, config.valid_promotions, config.valid_captures, config.valid_castles = show_hint_moves(point.piece)
+					
+					# Sets the from point and from piece.
+					
+					config.from_point = point
+					config.from_piece = point.piece
+					
+					# Flips the boolean.
+					
+					config.is_selected = True
+					
+					wn.onscreenclick(on_click)
+					
+					return
 			
-			for to_point in config.valid_moves:
+			# If it is in else it means that the player clicked on a piece before.
+			
+			else:
 				
-				# If checks if the clicked point is in the valid points to move. 
+				# For takes each point in the valid moves list of the from piece.
 				
-				if point.board_cor == to_point.board_cor:
+				for to_point in config.valid_moves:
 					
-					# Moves the piece and adds a count to the draw_move_count and adds the move to the appropriate list.
+					# If checks if the clicked point is in the valid points to move. 
 					
-					move(config.from_piece, config.from_point, point, grey_dot_maker)
-					config.draw_move_count = config.draw_move_count + 1 if config.from_piece.piece_type != "pawn" else 0
-					add_move_to_draw_move_list(config.from_point, to_point)
-					
-					# Flips the boolean is_selected and the turn.
-					
-					config.is_selected = False
-					flip_turn()
-					
-					# Sets the move in RDB.
-					
-					'''set_move(game_ID, config.from_piece, [point])'''
-					
-					# Checks if the game has ended.
-					
-					#if check_game_end() != "IP":
+					if point.board_cor == to_point.board_cor:
 						
-						#end_of_game(check_game_end()[0], check_game_end()[1])
-					
-					break
-			
-			# For takes each list of the point in the valid_jump_point_lists_list list of the from piece.
-			
-			for valid_promotion in config.valid_promotions:
-				
-				# Promotion_point is the point on which the piece can promote.
-				
-				promotion_point = valid_promotion[0]
-				
-				# If checks if the clicked point is in the valid points to move. 
-				
-				if point.board_cor == promotion_point.board_cor:
-					
-					promote_squad = Promote_Squad(point.x, point.y + config.from_piece.forward_direction_num * square_len, config.from_piece.piece_colour)
-					
-					while not config.promote_piece:
+						# Moves the piece and adds a count to the draw_move_count and adds the move to the appropriate list.
 						
-						if config.quit:
+						move(config.from_piece, config.from_point, point, grey_dot_maker)
+						config.draw_move_count = config.draw_move_count + 1 if config.from_piece.piece_type != "pawn" else 0
+						add_move_to_draw_move_list(config.from_point, to_point)
+						
+						# Flips the boolean is_selected and the turn.
+						
+						config.is_selected = False
+						flip_turn()
+						
+						# Sets the move in RDB.
+						
+						'''set_move(game_ID, config.from_piece, [point])'''
+						
+						# Checks if the game has ended.
+						
+						#if check_game_end() != "IP":
 							
-							break
+							#end_of_game(check_game_end()[0], check_game_end()[1])
 						
-						wn.update()
+						break
+				
+				# For takes each list of the point in the valid_jump_point_lists_list list of the from piece.
+				
+				for valid_promotion in config.valid_promotions:
 					
-					promote_squad.destroy()
+					# Promotion_point is the point on which the piece can promote.
 					
-					# Makes the pawn promote.
+					promotion_point = valid_promotion[0]
 					
-					promote(config.from_piece, config.from_point, config.promote_piece.promote_class, valid_promotion, grey_dot_maker)
+					# If checks if the clicked point is in the valid points to move. 
 					
-					config.promote_piece = None
-					
-					# It flips the boolean is_selected and the turn.
-					
-					config.draw_move_count = 0
-					config.is_selected = False
-					flip_turn()
-					
-					# Sets the capture in RDB.
-					
-					'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
-					config.to_moves = []
-					config.the_pieces_that_were_killed = []'''
-					
-					# Checks if the game has ended.
-					
-					#if check_game_end() != "IP":
+					if point.board_cor == promotion_point.board_cor:
 						
-						#end_of_game(check_game_end()[0], check_game_end()[1])
-					
-					break
-			
-			# For takes each list of the point in the valid_jump_point_lists_list list of the from piece.
-			
-			for valid_capture in config.valid_captures:
-				
-				# Capture_point is the point on which the piece can capture and the captured_piece is the piece that will be captured.
-				
-				capture_point, captured_piece = valid_capture
-				
-				# If checks if the clicked point is in the valid points to move. 
-				
-				if point.board_cor == capture_point.board_cor:
-					
-					# Makes the piece capture.
-					
-					capture(config.from_piece, config.from_point, captured_piece, point, grey_dot_maker)
+						promote_squad = Promote_Squad(point.x, point.y + config.from_piece.forward_direction_num * square_len, config.from_piece.piece_colour)
+						
+						while not config.promote_piece:
 							
-					# It flips the boolean is_selected and the turn.
-					
-					config.draw_move_count = 0
-					config.is_selected = False
-					flip_turn()
-					
-					# Sets the capture in RDB.
-					
-					'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
-					config.to_moves = []
-					config.the_pieces_that_were_killed = []'''
-					
-					# Checks if the game has ended.
-					
-					#if check_game_end() != "IP":
-						
-						#end_of_game(check_game_end()[0], check_game_end()[1])
-					
-					break
-			
-			for valid_castle in config.valid_castles:
-				
-				# Jump_point_index is the index of the point onto which the piece can jump and the kill_point_index is the index of the point of which the piece will be killed.
-				
-				castle_point, castle_rook, castle_rook_point = valid_castle
-				
-				# If checks if the clicked point is in the valid points to move. 
-				
-				if point.board_cor == castle_point.board_cor:
-					
-					# Makes the piece castle.
-					
-					castle(config.from_piece, config.from_point, castle_rook, castle_rook_point, point, grey_dot_maker)
+							if config.quit:
+								
+								break
 							
-					# It flips the boolean is_selected and the turn.
-					
-					config.draw_move_count += 1
-					config.is_selected = False
-					flip_turn()
-					
-					# Sets the capture in RDB.
-					
-					'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
-					config.to_moves = []
-					config.the_pieces_that_were_killed = []'''
-					
-					# Checks if the game has ended.
-					
-					#if check_game_end() != "IP":
+							wn.update()
 						
-						#end_of_game(check_game_end()[0], check_game_end()[1])
-			
-			# If it is not a valid point then it checks if the user clicked on the same piece again.
-			
-			if point.board_cor == config.from_point.board_cor:
+						promote_squad.destroy()
+						
+						# Makes the pawn promote.
+						
+						promote(config.from_piece, config.from_point, config.promote_piece.promote_class, valid_promotion, grey_dot_maker)
+						
+						config.promote_piece = None
+						
+						# It flips the boolean is_selected and the turn.
+						
+						config.draw_move_count = 0
+						config.is_selected = False
+						flip_turn()
+						
+						# Sets the capture in RDB.
+						
+						'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
+						config.to_moves = []
+						config.the_pieces_that_were_killed = []'''
+						
+						# Checks if the game has ended.
+						
+						#if check_game_end() != "IP":
+							
+							#end_of_game(check_game_end()[0], check_game_end()[1])
+						
+						break
 				
-				# It resets the hints.
+				# For takes each list of the point in the valid_jump_point_lists_list list of the from piece.
 				
-				grey_dot_maker.clear()
+				for valid_capture in config.valid_captures:
+					
+					# Capture_point is the point on which the piece can capture and the captured_piece is the piece that will be captured.
+					
+					capture_point, captured_piece = valid_capture
+					
+					# If checks if the clicked point is in the valid points to move. 
+					
+					if point.board_cor == capture_point.board_cor:
+						
+						# Makes the piece capture.
+						
+						capture(config.from_piece, config.from_point, captured_piece, point, grey_dot_maker)
+								
+						# It flips the boolean is_selected and the turn.
+						
+						config.draw_move_count = 0
+						config.is_selected = False
+						flip_turn()
+						
+						# Sets the capture in RDB.
+						
+						'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
+						config.to_moves = []
+						config.the_pieces_that_were_killed = []'''
+						
+						# Checks if the game has ended.
+						
+						#if check_game_end() != "IP":
+							
+							#end_of_game(check_game_end()[0], check_game_end()[1])
+						
+						break
 				
-				# Flips the boolean is_selected.
+				for valid_castle in config.valid_castles:
+					
+					# Jump_point_index is the index of the point onto which the piece can jump and the kill_point_index is the index of the point of which the piece will be killed.
+					
+					castle_point, castle_rook, castle_rook_point = valid_castle
+					
+					# If checks if the clicked point is in the valid points to move. 
+					
+					if point.board_cor == castle_point.board_cor:
+						
+						# Makes the piece castle.
+						
+						castle(config.from_piece, config.from_point, castle_rook, castle_rook_point, point, grey_dot_maker)
+								
+						# It flips the boolean is_selected and the turn.
+						
+						config.draw_move_count += 1
+						config.is_selected = False
+						flip_turn()
+						
+						# Sets the capture in RDB.
+						
+						'''set_move(game_ID, config.from_piece, config.to_moves, config.the_pieces_that_were_killed)
+						config.to_moves = []
+						config.the_pieces_that_were_killed = []'''
+						
+						# Checks if the game has ended.
+						
+						#if check_game_end() != "IP":
+							
+							#end_of_game(check_game_end()[0], check_game_end()[1])
 				
-				config.is_selected = False
-			
-			# If none of the above conditions are it checks if the state of the point is the same as the from position.
-			
-			elif point.state[0] == config.from_point.state[0]:
+				# If it is not a valid point then it checks if the user clicked on the same piece again.
 				
-				# Flips the boolean is_selected and calls the function again for the piece that the player clicked.
+				if point.board_cor == config.from_point.board_cor and config.dragging:
+					
+					# It resets the hints.
+					
+					grey_dot_maker.clear()
+					
+					config.valid_moves = config.valid_promotions = config.valid_captures = config.valid_castles = []
+					
+					# Sets the from point and from piece.
+					
+					config.from_point = ""
+					config.from_piece = ""
+					
+					# Flips the boolean is_selected.
+					
+					config.is_selected = False
 				
-				config.is_selected = False
-				on_click(x1, y1)
-	
-	wn.onclick(on_click)
+				# If none of the above conditions are it checks if the state of the point is the same as the from position.
+				
+				elif point.state[0] == config.from_point.state[0]:
+					
+					# Flips the boolean is_selected and calls the function again for the piece that the player clicked.
+					
+					config.is_selected = False
+					on_click(x1, y1)
+		
+		wn.onscreenclick(on_click)
 
 
 # Returns the valid moves and captures and other moves in a list of
